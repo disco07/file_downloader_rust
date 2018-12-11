@@ -40,7 +40,6 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
 
 
 
-
     Ok(())
 }
 
