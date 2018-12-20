@@ -39,7 +39,6 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
     io::copy(&mut bar.reader(body.as_ref()), &mut file).unwrap();
 
 
-
     Ok(())
 }
 
