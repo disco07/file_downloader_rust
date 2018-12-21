@@ -38,7 +38,6 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
     let bar = Bar::default_bytes(body.len() as i64, "downloading");
     io::copy(&mut bar.reader(body.as_ref()), &mut file).unwrap();
 
-
     Ok(())
 }
 
