@@ -44,7 +44,7 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
 #[tokio::main]
 async fn main() -> Result<(), &'static str> {
     downloader("https://desktop.docker.com/win/main/amd64/Docker Desktop Installer.exe").await.unwrap();
-    println!();
+    println!("ici");
     Ok(())
 }
 
