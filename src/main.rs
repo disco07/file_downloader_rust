@@ -4,12 +4,22 @@ struct FilePart {
     end: i64,
 }
 
-fn downloader(url: &str) -> Result<(), &str> {
-    if url.trim() == "" {
-        return Err("invalid url");
+async fn downloader(url: &str){
+    // assert_eq!(url.trim(), "", "invalid url");
+    let client = reqwest::Client::new();
+    let res = client
+        .head(url)
+        .send()
+        .await;
+
+    match res {
+        Ok(f) => println!("{:?}", f.headers().get("accept-ranges")),
+        Err(e) => println!("{}", e)
     }
+
 }
 
-fn main() {
-    println!("Hello, world!");
+#[tokio::main]
+async fn main() {
+    downloader("https://agritrop.cirad.fr/584726/1/Rapport.pdf").await
 }
