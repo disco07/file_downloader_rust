@@ -1,4 +1,6 @@
+use std::borrow::Borrow;
 use std::fs::File;
+use std::io::Write;
 use std::thread;
 use reqwest::{Error, Response};
 use reqwest::header::HeaderValue;
@@ -51,25 +53,21 @@ async fn downloader(url: &str) -> Result<(), &str> {
         let name = format!("part{}", i);
         let start = i * offset;
         let end  = (i + 1) * offset;
-        let l = || async {
-            let mut file = File::create(name).unwrap();
-            let req = client
+        let mut file = File::create(name).unwrap();
+
+        || async {
+            let body = client
                 .get(url)
                 .header("Range", format!("bytes={}-{}", start, end))
                 .send()
                 .await
-                .expect("failed to get response")
-                .text()
+                .unwrap()
+                .bytes()
                 .await
-                .expect("failed to get payload");;
+                .unwrap();
 
-            // let body = match req {
-            //     Ok(r) => {r.bytes_stream()}
-            //     Err(_) => {}
-            // };
-            panic!("{:?}", req)
+            file.write_all(body.borrow());
         };
-        l;
     }
 
     Ok(())
