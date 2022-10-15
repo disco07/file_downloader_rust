@@ -88,5 +88,5 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
 
 #[tokio::main]
 async fn main() -> Result<(), &'static str> {
-    downloader("https://agritrop.cirad.fr/584726/1/Rapport.pdf").await
+    downloader("http://research.nhm.org/pdfs/10840/10840.pdf").await
 }
