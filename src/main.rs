@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::thread;
+use reqwest::{Error, Response};
 use reqwest::header::HeaderValue;
 
 struct FilePart {
@@ -27,7 +30,7 @@ async fn downloader(url: &str) -> Result<(), &str> {
         .await;
 
     let mut accept_range: bool = false;
-    let content_length: i64;
+    let mut content_length: i64 = 0;
     match res {
         Ok(f) => {
             content_length = f.headers().get("content-length").unwrap().to_string().parse::<i64>().unwrap();
@@ -41,7 +44,39 @@ async fn downloader(url: &str) -> Result<(), &str> {
         return Err("unable to download file with multithreading");
     }
 
+    let nb_part = 3;
+    let offset = content_length/nb_part;
+
+    for i in 0..nb_part {
+        let name = format!("part{}", i);
+        let start = i * offset;
+        let end  = (i + 1) * offset;
+        let l = || async {
+            let mut file = File::create(name).unwrap();
+            let req = client
+                .get(url)
+                .header("Range", format!("bytes={}-{}", start, end))
+                .send()
+                .await
+                .expect("failed to get response")
+                .text()
+                .await
+                .expect("failed to get payload");;
+
+            // let body = match req {
+            //     Ok(r) => {r.bytes_stream()}
+            //     Err(_) => {}
+            // };
+            panic!("{:?}", req)
+        };
+        l;
+    }
+
     Ok(())
+}
+
+fn worker() {
+
 }
 
 #[tokio::main]
