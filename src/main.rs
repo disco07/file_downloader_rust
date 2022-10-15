@@ -38,7 +38,7 @@ async fn downloader(url: &str) -> Result<(), &str> {
     };
 
     if !accept_range {
-        return Err("unable to download file with multithreads");
+        return Err("unable to download file with multithreading");
     }
 
     Ok(())
