@@ -1,15 +1,9 @@
 use std::borrow::Borrow;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::thread;
+use std::{fs, thread};
 use reqwest::{Error, Response};
 use reqwest::header::HeaderValue;
-
-// struct FilePart {
-//     name: String,
-//     start: i64,
-//     end: i64,
-// }
 
 pub trait HeaderValueExtension {
     fn to_string(&self) -> String;
@@ -83,6 +77,8 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
         file_copy.read_to_end(&mut contents).unwrap();
 
         out.write_all(contents.as_ref()).unwrap();
+
+        fs::remove_file(name.as_str()).unwrap();
     }
 
     Ok(())
