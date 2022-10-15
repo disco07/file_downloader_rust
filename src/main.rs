@@ -1,8 +1,7 @@
 use std::borrow::Borrow;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::{fs, thread};
-use reqwest::{Error, Response};
+use std::{fs};
 use reqwest::header::HeaderValue;
 
 pub trait HeaderValueExtension {
@@ -44,7 +43,7 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
     let nb_part = 3;
     let offset = content_length / nb_part;
 
-    let thread = thread::spawn(move || async move {
+    tokio::spawn(async move {
         for i in 0..nb_part {
             println!("hello there {}", i);
             let name = format!("part{}", i);
@@ -63,15 +62,13 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
 
             file.write_all(body.borrow()).unwrap();
         }
-    });
-
-    thread.join().unwrap();
+    }).await.unwrap();
 
     let mut out = File::create(filename).unwrap();
     for i in 0..nb_part {
         let name = format!("part{}", i);
 
-        let file = File::open(name).unwrap();
+        let file = File::open(&name).unwrap();
         let mut file_copy = file.try_clone().unwrap();
         let mut contents = vec![];
         file_copy.read_to_end(&mut contents).unwrap();
