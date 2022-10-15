@@ -1,8 +1,8 @@
+use reqwest::header::HeaderValue;
 use std::borrow::Borrow;
+use std::fs;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::{fs};
-use reqwest::header::HeaderValue;
 
 pub trait HeaderValueExtension {
     fn to_string(&self) -> String;
@@ -19,19 +19,22 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
         return Err("invalid url");
     }
     let client = reqwest::Client::new();
-    let res = client
-        .head(url)
-        .send()
-        .await;
+    let res = client.head(url).send().await;
 
     let mut accept_range: bool = false;
     let mut content_length: i64 = 0;
     match res {
         Ok(f) => {
-            content_length = f.headers().get("content-length").unwrap().to_string().parse::<i64>().unwrap();
+            content_length = f
+                .headers()
+                .get("content-length")
+                .unwrap()
+                .to_string()
+                .parse::<i64>()
+                .unwrap();
             accept_range = f.headers().get("accept-ranges").unwrap().to_string() == "bytes";
         }
-        Err(e) => println!("{}", e)
+        Err(e) => println!("{}", e),
     };
 
     if !accept_range {
@@ -62,7 +65,9 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
 
             file.write_all(body.borrow()).unwrap();
         }
-    }).await.unwrap();
+    })
+    .await
+    .unwrap();
 
     let mut out = File::create(filename).unwrap();
     for i in 0..nb_part {
