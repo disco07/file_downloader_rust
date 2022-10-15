@@ -1,15 +1,15 @@
 use std::borrow::Borrow;
 use std::fs::File;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::thread;
 use reqwest::{Error, Response};
 use reqwest::header::HeaderValue;
 
-struct FilePart {
-    name: String,
-    start: i64,
-    end: i64,
-}
+// struct FilePart {
+//     name: String,
+//     start: i64,
+//     end: i64,
+// }
 
 pub trait HeaderValueExtension {
     fn to_string(&self) -> String;
@@ -21,7 +21,7 @@ impl HeaderValueExtension for HeaderValue {
     }
 }
 
-async fn downloader(url: &str) -> Result<(), &str> {
+async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
     if url == "" {
         return Err("invalid url");
     }
@@ -37,8 +37,7 @@ async fn downloader(url: &str) -> Result<(), &str> {
         Ok(f) => {
             content_length = f.headers().get("content-length").unwrap().to_string().parse::<i64>().unwrap();
             accept_range = f.headers().get("accept-ranges").unwrap().to_string() == "bytes";
-            println!("{:?} - {:?}", content_length, accept_range)
-        },
+        }
         Err(e) => println!("{}", e)
     };
 
@@ -46,17 +45,19 @@ async fn downloader(url: &str) -> Result<(), &str> {
         return Err("unable to download file with multithreading");
     }
 
+    let url_split = url.split("/").collect::<Vec<_>>();
+    let filename = url_split[url_split.len() - 1];
     let nb_part = 3;
-    let offset = content_length/nb_part;
+    let offset = content_length / nb_part;
 
-    for i in 0..nb_part {
-        let name = format!("part{}", i);
-        let start = i * offset;
-        let end  = (i + 1) * offset;
-        let mut file = File::create(name).unwrap();
-
-        || async {
-            let body = client
+    let thread = thread::spawn(move || async move {
+        for i in 0..nb_part {
+            println!("hello there {}", i);
+            let name = format!("part{}", i);
+            let start = i * offset;
+            let end = (i + 1) * offset;
+            let mut file = File::create(name).unwrap();
+            let body = reqwest::Client::new()
                 .get(url)
                 .header("Range", format!("bytes={}-{}", start, end))
                 .send()
@@ -66,15 +67,25 @@ async fn downloader(url: &str) -> Result<(), &str> {
                 .await
                 .unwrap();
 
-            file.write_all(body.borrow());
-        };
+            file.write_all(body.borrow()).unwrap();
+        }
+    });
+
+    thread.join().unwrap();
+
+    let mut out = File::create(filename).unwrap();
+    for i in 0..nb_part {
+        let name = format!("part{}", i);
+
+        let file = File::open(name).unwrap();
+        let mut file_copy = file.try_clone().unwrap();
+        let mut contents = vec![];
+        file_copy.read_to_end(&mut contents).unwrap();
+
+        out.write_all(contents.as_ref()).unwrap();
     }
 
     Ok(())
-}
-
-fn worker() {
-
 }
 
 #[tokio::main]
