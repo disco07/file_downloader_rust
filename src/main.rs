@@ -3,6 +3,9 @@ use std::borrow::Borrow;
 use std::fs;
 use std::fs::File;
 use std::io::{Read, Write};
+use std::sync::Arc;
+use std::time::Instant;
+use rpb::bar::Bar;
 
 pub trait HeaderValueExtension {
     fn to_string(&self) -> String;
@@ -45,10 +48,12 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
     let filename = url_split[url_split.len() - 1];
     let nb_part = 3;
     let offset = content_length / nb_part;
+    let bar = Arc::new(Bar::default_bytes(content_length, "downloading"));
 
-    tokio::spawn(async move {
-        for i in 0..nb_part {
-            println!("hello there {}", i);
+    let mut threads = vec![];
+    for i in 0..nb_part {
+        let mut bar = Arc::clone(&bar);
+        let th = tokio::spawn(async move {
             let name = format!("part{}", i);
             let start = i * offset;
             let end = (i + 1) * offset;
@@ -62,12 +67,17 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
                 .bytes()
                 .await
                 .unwrap();
-
+            // println!("{i}");
             file.write_all(body.borrow()).unwrap();
-        }
-    })
-    .await
-    .unwrap();
+            //bar.writer(file).write_all(body.borrow()).unwrap();
+            bar.inc();
+        });
+        threads.push(th);
+    }
+
+    for thread in threads {
+        thread.await.unwrap();
+    }
 
     let mut out = File::create(filename).unwrap();
     for i in 0..nb_part {
@@ -88,5 +98,25 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
 
 #[tokio::main]
 async fn main() -> Result<(), &'static str> {
-    downloader("http://research.nhm.org/pdfs/10840/10840.pdf").await
+    let time = Instant::now();
+    downloader("https://agritrop.cirad.fr/584726/1/Rapport.pdf").await;
+    println!("");
+    println!("{:?}", time.elapsed().as_secs());
+    Ok(())
 }
+
+// fn main() {
+//     let mut threads = vec![];
+//     for i in 0..10 {
+//         let th = spawn(move || {
+//             println!("{i}");
+//             sleep(Duration::from_secs(1));
+//         });
+//         threads.push(th);
+//     }
+//
+//     for thread in threads {
+//         thread.join().unwrap();
+//     }
+//     println!("main")
+// }

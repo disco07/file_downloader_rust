@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 reqwest = "0.11.12"
 tokio = { version = "1.20", features = ["full"] }
+rpb = { git = "https://github.com/disco07/rpb.git", branch = "main" }
