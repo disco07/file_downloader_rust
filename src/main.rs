@@ -68,9 +68,9 @@ async fn downloader<'l>(url: &'static str) -> Result<(), &str> {
                 .await
                 .unwrap();
             // println!("{i}");
-            file.write_all(body.borrow()).unwrap();
-            //bar.writer(file).write_all(body.borrow()).unwrap();
-            bar.inc();
+            //file.write_all(body.borrow()).unwrap();
+            bar.writer(file).write_all(body.borrow()).unwrap();
+            //bar.inc();
         });
         threads.push(th);
     }
